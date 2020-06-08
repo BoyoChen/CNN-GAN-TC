@@ -1,0 +1,61 @@
+experiment_name: three_stage_training
+
+template:
+  sub_exp_name: regressor_pretrain_stage
+  compound_model:
+    generator: generator_3_2
+    discriminator: discriminator_2_1
+    regressor: regressor_1_3
+  data:
+    data_folder: TCIR_data/
+    batch_size: 100
+    shuffle_buffer: 100000
+    good_VIS_only: no
+    label_column: Vmax
+  train_compound_model:
+    evaluate_freq: 5
+    use_generated_image: no
+    max_epoch: 100
+    optimizing_target: regressor
+
+sub_experiments:
+- sub_exp_name: generator_good_VIS_only_stage
+  load_pretrain_weight:
+    from_sub_exp: regressor_pretrain_stage
+  data:
+    good_VIS_only: yes
+  train_compound_model:
+    max_epoch: 500
+    G_D_loss_ratio:
+      VIS_hours: 0.01
+      VIS_GAN: 1
+      VIS_L1: 100
+      PMW_GAN: 1
+      PMW_L1: 10
+      generator_MSE: 0.001
+    optimizing_target: generator
+
+- sub_exp_name: generator_all_data_stage_freeze_VIS_generator
+  load_pretrain_weight:
+    from_sub_exp: generator_good_VIS_only_stage
+  data:
+    good_VIS_only: no
+  train_compound_model:
+    max_epoch: 200
+    G_D_loss_ratio:
+      VIS_hours: 0
+      VIS_GAN: 0
+      VIS_L1: 0
+      PMW_GAN: 1
+      PMW_L1: 10
+      generator_MSE: 0.01
+    optimizing_target: generator
+
+- sub_exp_name: regressor_finetune_stage
+  load_pretrain_weight:
+    from_sub_exp: generator_all_data_stage_freeze_VIS_generator
+  data:
+    good_VIS_only: no
+  train_compound_model:
+    max_epoch: 300
+    optimizing_target: regressor

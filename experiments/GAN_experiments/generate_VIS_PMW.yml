@@ -1,0 +1,66 @@
+experiment_name: generate_VIS_PMW
+
+template:
+  sub_exp_name: pretrain_only_good_VIS_stage
+  compound_model:
+    generator: generator_3_1
+    discriminator: discriminator_2_1
+    regressor: regressor_1_3
+  data:
+    data_folder: TCIR_data/
+    batch_size: 100
+    shuffle_buffer: 100000
+    good_VIS_only: yes
+    label_column: Vmax
+  train_compound_model:
+    evaluate_freq: 10
+    G_D_loss_ratio:
+      VIS_hours: 1
+      VIS_GAN: 1
+      VIS_L1: 100
+      PMW_GAN: 1
+      PMW_L1: 100
+      generator_MSE: 0
+    optimizing_target: generator
+    max_epoch: 500
+
+sub_experiments:
+- sub_exp_name: pretrain_all_data_stage
+  load_pretrain_weight:
+    from_sub_exp: pretrain_only_good_VIS_stage
+  data:
+    good_VIS_only: no
+  train_compound_model:
+    evaluate_freq: 5
+    G_D_loss_ratio:
+      VIS_hours: 5
+      VIS_GAN: 1
+      VIS_L1: 500
+    optimizing_target: generator
+    max_epoch: 100
+
+
+- sub_exp_name: pretrain_all_data_stage_VIS_also_considered
+  load_pretrain_weight:
+    from_sub_exp: pretrain_only_good_VIS_stage
+  data:
+    good_VIS_only: no
+  train_compound_model:
+    evaluate_freq: 5
+    G_D_loss_ratio:
+      VIS_hours: 5
+      VIS_GAN: 1
+      VIS_L1: 500
+    optimizing_target: generator
+    max_epoch: 100
+
+
+- sub_exp_name: regressor_training_stage
+  load_pretrain_weight:
+    from_sub_exp: pretrain_all_data_stage
+  data:
+    good_VIS_only: no
+  train_compound_model:
+    evaluate_freq: 5
+    optimizing_target: regressor
+    max_epoch: 200

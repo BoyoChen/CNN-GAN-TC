@@ -2,37 +2,55 @@
 
 This repository is the official implementation of Real-time Tropical Cyclone Intensity Estimation by Handling Temporally Heterogeneous Satellite Data. 
 
- ![Caption.](figs/compound_model_illustration.png) {#fig:description}
+ ![model_illustration](figs/compound_model_illustration.png)
 
 ## Requirements
 
 To install requirements:
 
 ```setup
-pip install -r requirements.txt
-```
+# install pipenv (if you don't have it installed yet)
+pip install pipenv
 
-> 📋Describe how to set up the environment, e.g. pip/conda/docker commands, download datasets, etc...
+# use pipenv
+pipenv install
+
+# install tensorflow **in the** pipenv shell, (choose compatible tensorflow version according to your cuda/cudnn version)
+pipenv run pip install tesorflow
+```
 
 ## Training
 
-To train the model(s) in the paper, run this command:
+To run the experiments in the paper, run this command:
 
 ```train
-python train.py --input-data <path_to_data> --alpha 10 --beta 20
+pipenv run python main.py <experiment_path> train
+
+# To limit GPU usage, add an argument:
+pipenv run python main.py <experiment_path> train --GPU_limit 3000
+
+<experiment_path>:
+experiments/GAN_experiments/five_stage_training.yml: The proposed model.
+experiments/GAN_experiments/three_stage_training.yml: The elementary version of the proposed model.
+
+experiments/regressor_experiments/reproduce_CNN-TC.yml: The reproduction of the formar work.
+experiments/regressor_experiments/channel_composition_Vmax.yml: To obtain the Fig.7 in the paper.
 ```
 
-> 📋Describe how to train the models, with example commands on how to train the models in your paper, including the full training procedure and appropriate hyperparameters.
+***Notice that on the very first execution, it will download and extract the dataset before saving it into a folder "TCIR_data/".
+This demands approximately 80GB space on disk. :)***
 
 ## Evaluation
 
-To evaluate my model on ImageNet, run:
+All the experiment is evaluated automaticly by tensorboard and recorded in the folder "logs".
+To check the result:
 
 ```eval
-python eval.py --model-file mymodel.pth --benchmark imagenet
-```
+pipenv run tensorboard --logdir logs
 
-> 📋Describe how to evaluate the trained models on benchmarks reported in the paper, give commands that produce the results (section below).
+# If you're running this on somewhat like a work station, bind port by arguments:
+pipenv run tensorboard --logdir logs --port=6090 --bind_all
+```
 
 ## Pre-trained Models
 

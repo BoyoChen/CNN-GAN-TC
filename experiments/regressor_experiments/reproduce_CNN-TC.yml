@@ -1,0 +1,17 @@
+experiment_name: reproduce_CNN-TC
+
+template:
+  sub_exp_name: reproduce_CNN-TC
+  regressor: regressor_2_3
+
+  data:
+    data_folder: TCIR_data/
+    batch_size: 100
+    shuffle_buffer: 50000
+    label_column: Vmax
+
+  train_regressor:
+    max_epoch: 200
+    evaluate_freq: 10
+    early_stop_tolerance: 3
+    overfit_tolerance: 20

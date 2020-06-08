@@ -1,0 +1,37 @@
+experiment_name: dropout_POC_good_VIS_only
+
+template:
+  sub_exp_name: baseline
+  regressor: regressor_2_3
+
+  data:
+    data_folder: TCIR_data/
+    batch_size: 100
+    shuffle_buffer: 50000
+    good_VIS_only: yes
+    label_column: Vmax
+
+  train_regressor:
+    max_epoch: 300
+    evaluate_freq: 10
+    early_stop_tolerance: 10
+    overfit_tolerance: null
+
+sub_experiments:
+  - sub_exp_name: regressor_4_1
+    regressor: regressor_4_1
+
+  - sub_exp_name: regressor_4_2
+    regressor: regressor_4_2
+
+  - sub_exp_name: regressor_4_3
+    regressor: regressor_4_3
+
+  - sub_exp_name: regressor_4_4
+    regressor: regressor_4_4
+
+  - sub_exp_name: regressor_4_5
+    regressor: regressor_4_5
+
+  - sub_exp_name: regressor_4_6
+    regressor: regressor_4_6
