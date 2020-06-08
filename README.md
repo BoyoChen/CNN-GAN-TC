@@ -2,7 +2,7 @@
 
 This repository is the official implementation of Real-time Tropical Cyclone Intensity Estimation by Handling Temporally Heterogeneous Satellite Data. 
 
- ![Caption.](compound_model_illustration.png) {#fig:description}
+ ![Caption.](figs/compound_model_illustration.png) {#fig:description}
 
 ## Requirements
 
