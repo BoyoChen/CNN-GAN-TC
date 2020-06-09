@@ -58,7 +58,7 @@ def get_processed_datasets(data_folder, batch_size, shuffle_buffer, label_column
         )
 
         label = tf.data.Dataset.from_tensor_slices(
-            phase_data['label'][list(label_column)].to_numpy(dtype='float32')
+            phase_data['label'][[label_column]].to_numpy(dtype='float32')
         )
 
         datasets[phase] = tf.data.Dataset.zip((image, feature, label)) \
