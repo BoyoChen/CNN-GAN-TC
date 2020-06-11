@@ -55,16 +55,6 @@ def fix_reversed_VIS(image_matrix):
             VIS_matrix += 1
 
 
-def remove_bad_quality_VIS_data(label_df, feature_df, image_matrix):
-    good_VIS_index = feature_df.index[
-        feature_df['is_good_quality_VIS']
-    ]
-    label_df = label_df.loc[good_VIS_index].reset_index(drop=True)
-    feature_df = feature_df.loc[good_VIS_index].reset_index(drop=True)
-    image_matrix = image_matrix[good_VIS_index]
-    return label_df, feature_df, image_matrix
-
-
 def crop_center(matrix, crop_width):
     total_width = matrix.shape[1]
     start = total_width // 2 - crop_width // 2
@@ -101,6 +91,17 @@ def extract_label_and_feature_from_info(info_df):
     label_df = info_df[['data_set', 'ID', 'local_time', 'Vmax', 'R35_4qAVG', 'MSLP']]
     feature_df = info_df[['lon', 'lat', 'region_code', 'yday_cos', 'yday_sin', 'hour_cos', 'hour_sin']]
     return label_df, feature_df
+
+
+def data_cleaning_and_organizing(image_matrix, info_df):
+    image_matrix = remove_outlier_and_nan(image_matrix)
+    image_matrix = flip_SH_image_matrix(info_df, image_matrix)
+    fix_reversed_VIS(image_matrix)
+
+    label_df, feature_df = extract_label_and_feature_from_info(info_df)
+    feature_df['minutes_to_noon'] = label_df['local_time'].apply(get_minutes_to_noon)
+    feature_df['is_good_quality_VIS'] = mark_good_quality_VIS(label_df, image_matrix)
+    return image_matrix, label_df, feature_df
 
 
 def train_valid_split(label_df, feature_df, image_matrix, phase):
@@ -140,13 +141,7 @@ def extract_features_from_raw_file(data_folder):
             for file_name in file_list
         ]).reset_index(drop=True)
 
-        image_matrix = remove_outlier_and_nan(image_matrix)
-        image_matrix = flip_SH_image_matrix(info_df, image_matrix)
-        fix_reversed_VIS(image_matrix)
-
-        label_df, feature_df = extract_label_and_feature_from_info(info_df)
-        feature_df['minutes_to_noon'] = label_df['local_time'].apply(get_minutes_to_noon)
-        feature_df['is_good_quality_VIS'] = mark_good_quality_VIS(label_df, image_matrix)
+        image_matrix, label_df, feature_df = data_cleaning_and_organizing(image_matrix, info_df)
 
         if phase == 'train':
             datasets['train'] = train_valid_split(label_df, feature_df, image_matrix, 'train')
@@ -161,7 +156,27 @@ def extract_features_from_raw_file(data_folder):
     return datasets
 
 
-def load_dataset(data_folder, phase, good_VIS_only):
+def remove_bad_quality_VIS_data(label_df, feature_df, image_matrix):
+    good_VIS_index = feature_df.index[
+        feature_df['is_good_quality_VIS']
+    ]
+    label_df = label_df.loc[good_VIS_index].reset_index(drop=True)
+    feature_df = feature_df.loc[good_VIS_index].reset_index(drop=True)
+    image_matrix = image_matrix[good_VIS_index]
+    return label_df, feature_df, image_matrix
+
+
+def remove_0_R35_data(label_df, feature_df, image_matrix):
+    positive_R35_index = label_df.index[
+        label_df['R35_4qAVG'] > 0
+    ]
+    label_df = label_df.loc[positive_R35_index].reset_index(drop=True)
+    feature_df = feature_df.loc[positive_R35_index].reset_index(drop=True)
+    image_matrix = image_matrix[positive_R35_index]
+    return label_df, feature_df, image_matrix
+
+
+def load_dataset(data_folder, phase, good_VIS_only, positive_R35_only):
     if phase not in ['train', 'valid', 'test']:
         print('phase should be one of train/valid/test.')
         return
@@ -181,14 +196,18 @@ def load_dataset(data_folder, phase, good_VIS_only):
     with open(pickle_path, 'rb') as load_file:
         dataset = pickle.load(load_file)
 
-    if good_VIS_only:
-        purified_label_df, purified_feature_df, purified_image_matrix = remove_bad_quality_VIS_data(
-            dataset['label'], dataset['feature'], dataset['image']
-        )
+    if good_VIS_only or positive_R35_only:
+        label = dataset['label']
+        feature = dataset['feature']
+        image = dataset['image']
+        if good_VIS_only:
+            label, feature, image = remove_bad_quality_VIS_data(label, feature, image)
+        if positive_R35_only:
+            label, feature, image = remove_0_R35_data(label, feature, image)
         dataset = {
-            'label': purified_label_df,
-            'feature': purified_feature_df,
-            'image': purified_image_matrix
+            'label': label,
+            'feature': feature,
+            'image': image
         }
 
     return dataset

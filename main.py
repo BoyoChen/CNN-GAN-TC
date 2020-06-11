@@ -3,20 +3,19 @@ import os
 import importlib
 import tensorflow as tf
 
+from modules.compound_model import CompoundModel
 from modules.regressor_trainer import train_regressor
 from modules.compound_model_trainer import train_compound_model
-from modules.training_helper import evaluate_regression_MSE
-from modules.feature_generator import load_dataset
-from modules.experiment_setting_parser import parse_experiment_settings
-from modules.compound_model import CompoundModel
-
-
-def create_model_instance(model_category, model_name):
-    model_class = importlib.import_module('model_library.' + model_category + 's.' + model_name).Model
-    return model_class()
+from modules.training_helper import evaluate_regression_MSE, get_tensorflow_datasets
+from modules.experiment_helper import parse_experiment_settings
 
 
 def create_model_by_experiment_settings(experiment_settings, load_from=''):
+
+    def create_model_instance(model_category, model_name):
+        model_class = importlib.import_module('model_library.' + model_category + 's.' + model_name).Model
+        return model_class()
+
     if 'compound_model' in experiment_settings:
         compound_model_setting = experiment_settings['compound_model']
         sub_models = {
@@ -47,25 +46,15 @@ def create_model_by_experiment_settings(experiment_settings, load_from=''):
         return regressor
 
 
-def get_processed_datasets(data_folder, batch_size, shuffle_buffer, label_column, good_VIS_only=False):
-    datasets = dict()
-    for phase in ['train', 'valid', 'test']:
-        phase_data = load_dataset(data_folder, phase, good_VIS_only)
-        image = tf.data.Dataset.from_tensor_slices(phase_data['image'])
+# This function is faciliating creating model instance in jupiter notebook
+def create_model_by_experiment_path_and_stage(experiment_path, sub_exp_name):
+    sub_exp_settings = parse_experiment_settings(experiment_path, only_this_sub_exp=sub_exp_name)
+    experiment_name = sub_exp_settings['experiment_name']
+    sub_exp_name = sub_exp_settings['sub_exp_name']
 
-        feature = tf.data.Dataset.from_tensor_slices(
-            phase_data['feature'].to_numpy(dtype='float32')
-        )
-
-        label = tf.data.Dataset.from_tensor_slices(
-            phase_data['label'][[label_column]].to_numpy(dtype='float32')
-        )
-
-        datasets[phase] = tf.data.Dataset.zip((image, feature, label)) \
-            .shuffle(shuffle_buffer) \
-            .batch(batch_size)
-
-    return datasets
+    model_save_path = prepare_model_save_path(experiment_name, sub_exp_name)
+    model = create_model_by_experiment_settings(sub_exp_settings, load_from=model_save_path)
+    return model
 
 
 def prepare_model_save_path(experiment_name, sub_exp_name):
@@ -80,19 +69,19 @@ def prepare_model_save_path(experiment_name, sub_exp_name):
     return model_save_path
 
 
-def execute_sub_exp(sub_exp_settings, action):
+def execute_sub_exp(sub_exp_settings, action, run_anyway):
     experiment_name = sub_exp_settings['experiment_name']
     sub_exp_name = sub_exp_settings['sub_exp_name']
     log_path = 'logs/%s/%s' % (experiment_name, sub_exp_name)
 
     print('Executing sub-experiment: %s' % sub_exp_name)
-    if action == 'train' and os.path.isdir(log_path):
+    if not run_anyway and action == 'train' and os.path.isdir(log_path):
         print('Sub-experiment already done before, skipped ಠ_ಠ')
         return
 
     summary_writer = tf.summary.create_file_writer(log_path)
     model_save_path = prepare_model_save_path(experiment_name, sub_exp_name)
-    datasets = get_processed_datasets(**sub_exp_settings['data'])
+    datasets = get_tensorflow_datasets(**sub_exp_settings['data'])
 
     if action == 'train':
         model = create_model_by_experiment_settings(sub_exp_settings)
@@ -119,7 +108,7 @@ def execute_sub_exp(sub_exp_settings, action):
             print('%s MSE loss: %lf, RMSE loss: %lf' % (phase, loss, loss**0.5))
 
 
-def main(experiment_path, action, GPU_limit):
+def main(action, experiment_path, GPU_limit, run_anyway):
     # shut up tensorflow!
     tf.get_logger().setLevel('ERROR')
 
@@ -136,13 +125,14 @@ def main(experiment_path, action, GPU_limit):
     experiment_list = parse_experiment_settings(experiment_path)
 
     for sub_exp_settings in experiment_list:
-        execute_sub_exp(sub_exp_settings, action)
+        execute_sub_exp(sub_exp_settings, action, run_anyway)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('experiment_path', help='name of the experiment setting, should match one of them file name in experiments folder')
     parser.add_argument('action', help='(train/evaluate)')
+    parser.add_argument('experiment_path', help='name of the experiment setting, should match one of them file name in experiments folder')
     parser.add_argument('--GPU_limit', type=int, default=3000)
+    parser.add_argument('--omit_completed_sub_exp', action='store_true')
     args = parser.parse_args()
-    main(args.experiment_path, args.action, args.GPU_limit)
+    main(args.action, args.experiment_path, args.GPU_limit, (not args.omit_completed_sub_exp))

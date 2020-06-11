@@ -1,6 +1,6 @@
 import tensorflow as tf
 from collections import defaultdict
-from modules.training_helper import image_rotate_and_crop, evaluate_regression_MSE
+from modules.training_helper import image_rotate_and_crop, evaluate_regression_MSE, evaluate_regression_MAE
 
 
 def train_regressor(
@@ -11,22 +11,26 @@ def train_regressor(
     evaluate_freq,
     max_epoch,
     early_stop_tolerance=None,
-    overfit_tolerance=None
+    overfit_tolerance=None,
+    loss_function='MSE'
 ):
     R_optimizer = tf.keras.optimizers.Adam()
-    MSE = tf.keras.losses.MeanSquaredError()
+    if loss_function == 'MSE':
+        loss = tf.keras.losses.MeanSquaredError()
+    elif loss_function == 'MAE':
+        loss = tf.keras.losses.MeanAbsoluteError()
     avg_losses = defaultdict(lambda: tf.keras.metrics.Mean(dtype=tf.float32))
 
     @tf.function
     def train_step(image, feature, label):
         with tf.GradientTape() as tape:
             pred_label = regressor(image, feature, training=True)
-            regressor_MSE_loss = MSE(label, pred_label)
+            regressor_loss = loss(label, pred_label)
 
-        R_gradients = tape.gradient(regressor_MSE_loss, regressor.trainable_variables)
+        R_gradients = tape.gradient(regressor_loss, regressor.trainable_variables)
         R_optimizer.apply_gradients(zip(R_gradients, regressor.trainable_variables))
 
-        avg_losses['Regressor: MSE_loss'].update_state(regressor_MSE_loss)
+        avg_losses['Regressor: %s_loss'%loss_function].update_state(regressor_loss)
         return
 
     # use stack to keep track on validation loss and help early stopping
@@ -37,7 +41,7 @@ def train_regressor(
             preprocessed_image = image_rotate_and_crop(image)
             train_step(preprocessed_image, feature, label)
 
-        train_loss = avg_losses['Regressor: MSE_loss'].result()
+        train_loss = avg_losses['Regressor: %s_loss'%loss_function].result()
         for loss_name, avg_loss in avg_losses.items():
             with summary_writer.as_default():
                 tf.summary.scalar(loss_name, avg_loss.result(), step=epoch_index+1)
@@ -47,7 +51,10 @@ def train_regressor(
             print('Completed %d epochs, do some evaluation' % (epoch_index+1))
             # calculate blending loss
             for phase in ['train', 'valid']:
-                blending_loss = evaluate_regression_MSE(regressor, datasets[phase])
+                if loss_function == 'MSE':
+                    blending_loss = evaluate_regression_MSE(regressor, datasets[phase])
+                elif loss_function == 'MAE':
+                    blending_loss = evaluate_regression_MAE(regressor, datasets[phase])
                 with summary_writer.as_default():
                     tf.summary.scalar('[' + phase + '] regressor: blending_loss', blending_loss, step=epoch_index+1)
 

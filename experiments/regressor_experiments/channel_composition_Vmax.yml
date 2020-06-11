@@ -29,32 +29,32 @@ sub_experiments:
   regressor: regressor_5_4
 
 #================================
-- sub_exp_name: IR1_generated_PMW
-  compound_model:
-    generator: generator_3_2
-    discriminator: discriminator_2_1
-    regressor: regressor_1_3
-    load_pretrain_weight:
-      from_experiment: five_stage_training
-      from_sub_exp: regressor_finetune_stage
-      reset_regressor: regressor_5_2
-  train_compound_model:
-    evaluate_freq: 5
-    use_generated_image: both
-    max_epoch: 200
-    optimizing_target: regressor
+# - sub_exp_name: IR1_generated_PMW
+#   compound_model:
+#     generator: generator_3_3
+#     discriminator: discriminator_2_1
+#     regressor: regressor_1_3
+#     load_pretrain_weight:
+#       from_experiment: five_stage_training
+#       from_sub_exp: regressor_finetune_stage
+#       reset_regressor: regressor_5_2
+#   train_compound_model:
+#     evaluate_freq: 5
+#     use_generated_image: both
+#     max_epoch: 200
+#     optimizing_target: regressor
 
-- sub_exp_name: IR1_generated_VIS
-  compound_model:
-    generator: generator_3_2
-    discriminator: discriminator_2_1
-    regressor: regressor_1_3
-    load_pretrain_weight:
-      from_experiment: five_stage_training
-      from_sub_exp: regressor_finetune_stage
-      reset_regressor: regressor_5_3
-  train_compound_model:
-    evaluate_freq: 5
-    use_generated_image: both
-    max_epoch: 200
-    optimizing_target: regressor
+# - sub_exp_name: IR1_generated_VIS
+#   compound_model:
+#     generator: generator_3_3
+#     discriminator: discriminator_2_1
+#     regressor: regressor_1_3
+#     load_pretrain_weight:
+#       from_experiment: five_stage_training
+#       from_sub_exp: regressor_finetune_stage
+#       reset_regressor: regressor_5_3
+#   train_compound_model:
+#     evaluate_freq: 5
+#     use_generated_image: both
+#     max_epoch: 200
+#     optimizing_target: regressor
