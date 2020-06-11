@@ -16,7 +16,7 @@ pip install pipenv
 pipenv install
 
 # install tensorflow **in the** pipenv shell, (choose compatible tensorflow version according to your cuda/cudnn version)
-pipenv run pip install tesorflow
+pipenv run pip install tensorflow
 pipenv run pip install tensorflow_addons
 ```
 
@@ -29,20 +29,22 @@ pipenv run python main.py train <experiment_path>
 
 <experiment_path>:
 experiments/GAN_experiments/three_stage_training.yml: The elementary version of the proposed model.
-experiments/GAN_experiments/paper_reproduction.yml: To reproduced the result list in the paper, use this.
-experiments/GAN_experiments/five_stage_training.yml: Fixed a bug in the paper_reproduction version, generate VIS images better during the night.
+experiments/GAN_experiments/five_stage_training.yml: To reproduced the result list in the paper, use this.
+experiments/GAN_experiments/five_stage_training_bug_fixed.yml: Fixed a bug in the paper_reproduction version, generate VIS images better during the night.
 
 experiments/regressor_experiments/reproduce_CNN-TC.yml: The reproduction of the former work.
 experiments/regressor_experiments/channel_composition_Vmax.yml: To obtain the Fig.7 in the paper.
 ```
 
-**running the whole five_stage_training experiment takes about 20~25 hours on my GTX 1080 gpu**
-**It's accelarted to about 8 hours training in our next work. However, not included in this paper.**
+**Running the whole five_stage_training experiment takes about 20~25 hours on my GTX 1080 gpu.**
+
+Training process is accelarted to about 8 hours in our next work. However, not included in this paper.
 
 ***Notice that on the very first execution, it will download and extract the dataset before saving it into a folder "TCIR_data/".
-This demands approximately 80GB space on disk. Big Data coming in! :)***
+This demands approximately 80GB space on disk as well as about 20 min preprocessing time, please be patient.***
 
 ###Some usful aguments
+
 #### To limit GPU usage
 Add GPU_limit argument, for example:
 ```args
@@ -95,6 +97,25 @@ Our model achieves the following performance on:
 
 ![performance_table](figs/performance_table.png)
 
-### Example of generated continuous **hourly** VIS channels:
 
-### Example of generated continuous **hourly** PMW channels:
+### Continuous, stable, high frequency observations:
+With the proposed model, we can now:
+1. Stably obtain VIS images even at the midnight.
+2. Stably obtain PMW up to every 15 minutes.
+
+Here we show an example, this is Hurricane Dorian (2019).
+
+We generate simulated VIS/PMW by our proposed model once per hour.
+
+The first image starts from 08/30 2019 0000 UTC.
+
+The last image ends at 09/02 2019 0800 UTC.
+
+#### VIS
+![hourly_vis](figs/hourly_vis.png)
+The figure shows the ability of proposed model to generate decent simulated VIS observation even at the midnight.
+
+### PMW:
+![hourly_pmw](figs/hourly_pmw.png)
+Notice that PMW obervations can only be obtained once per 3 hours before.
+With our proposed method, simulated PMW observations can be obtained with a much better frequency.
