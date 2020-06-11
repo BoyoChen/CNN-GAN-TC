@@ -2,7 +2,7 @@
 
 This repository is the official implementation of Real-time Tropical Cyclone Intensity Estimation by Handling Temporally Heterogeneous Satellite Data. 
 
- ![model_illustration](figs/compound_model_illustration.png)
+![model_illustration](figs/compound_model_illustration.png)
 
 ## Requirements
 
@@ -17,6 +17,7 @@ pipenv install
 
 # install tensorflow **in the** pipenv shell, (choose compatible tensorflow version according to your cuda/cudnn version)
 pipenv run pip install tesorflow
+pipenv run pip install tensorflow_addons
 ```
 
 ## Training
@@ -24,55 +25,76 @@ pipenv run pip install tesorflow
 To run the experiments in the paper, run this command:
 
 ```train
-pipenv run python main.py <experiment_path> train
-
-# To limit GPU usage, add an argument:
-pipenv run python main.py <experiment_path> train --GPU_limit 3000
+pipenv run python main.py train <experiment_path>
 
 <experiment_path>:
-experiments/GAN_experiments/five_stage_training.yml: The proposed model.
 experiments/GAN_experiments/three_stage_training.yml: The elementary version of the proposed model.
+experiments/GAN_experiments/paper_reproduction.yml: To reproduced the result list in the paper, use this.
+experiments/GAN_experiments/five_stage_training.yml: Fixed a bug in the paper_reproduction version, generate VIS images better during the night.
 
-experiments/regressor_experiments/reproduce_CNN-TC.yml: The reproduction of the formar work.
+experiments/regressor_experiments/reproduce_CNN-TC.yml: The reproduction of the former work.
 experiments/regressor_experiments/channel_composition_Vmax.yml: To obtain the Fig.7 in the paper.
 ```
 
+**running the whole five_stage_training experiment takes about 20~25 hours on my GTX 1080 gpu**
+**It's accelarted to about 8 hours training in our next work. However, not included in this paper.**
+
 ***Notice that on the very first execution, it will download and extract the dataset before saving it into a folder "TCIR_data/".
-This demands approximately 80GB space on disk. :)***
+This demands approximately 80GB space on disk. Big Data coming in! :)***
+
+###Some usful aguments
+#### To limit GPU usage
+Add GPU_limit argument, for example:
+```args
+pipenv run python train main.py <experiment_path> --GPU_limit 3000
+```
+2. An experiemnt is divided into several sub_exp's.
+For example, a five_stage_training experiment comprise 5 sub-exp.
+
+#### Continue from previous progress
+Once the experiemnt get interrupted, we probably want to continue from the completed part.
+For example, when the experiment get interrupted when executing sub-exp #3, we want to restart from the beginning of sub-exp #3 instead of sub-exp #1.
+Do this:
+1. remove partially done experiment's log
+```
+rm -r logs/five_stage_training/pretrain_regressor_all_data_stage/ 
+```
+2. restart experiment with argument: --omit_completed_sub_exp
+```
+pipenv run python train main.py experiments/GAN_experiments/five_stage_training.yml --omit_completed_sub_exp
+```
 
 ## Evaluation
 
-All the experiment is evaluated automaticly by tensorboard and recorded in the folder "logs".
+All the experiments are evaluated automaticly by tensorboard and recorded in the folder "logs".
 To check the result:
 
 ```eval
 pipenv run tensorboard --logdir logs
 
-# If you're running this on somewhat like a work station, bind port by arguments:
+# If you're running this on somewhat like a workstation, you could bind ports like this:
 pipenv run tensorboard --logdir logs --port=6090 --bind_all
 ```
 
-## Pre-trained Models
+Curve in fig.7 can be obtained from the **[valid] regressor: blending_loss** in the scalar tab.
+![way_to_obtain_fig7](figs/way_to_obtain_fig7.png)
 
-You can download pretrained models here:
-
-- [My awesome model](https://drive.google.com/mymodel.pth) trained on ImageNet using parameters x,y,z. 
-
-> 📋Give a link to where/how the pretrained models can be downloaded and how they were trained (if applicable).  Alternatively you can have an additional column in your results table with a link to the models.
+To calculate test scores:
+```test_score
+pipenv run python main.py evaluate <experiment_path> --GPU_limit 3000
+```
 
 ## Results
 
-Our model achieves the following performance on :
+### Generated_examples
 
-### [Image Classification on ImageNet](https://paperswithcode.com/sota/image-classification-on-imagenet)
+![generated_examples](figs/generated_channels.png)
 
-| Model name         | Top 1 Accuracy  | Top 5 Accuracy |
-| ------------------ |---------------- | -------------- |
-| My awesome model   |     85%         |      95%       |
+Our model achieves the following performance on:
+### [TCIR](https://github.com/BoyoChen/TCIR)
 
-> 📋Include a table of results from your paper, and link back to the leaderboard for clarity and context. If your main result is a figure, include that figure and link to the command or notebook to reproduce it. 
+![performance_table](figs/performance_table.png)
 
+### Example of generated continuous **hourly** VIS channels:
 
-## Contributing
-
-> 📋Pick a licence and describe how to contribute to your code repository. 
+### Example of generated continuous **hourly** PMW channels:

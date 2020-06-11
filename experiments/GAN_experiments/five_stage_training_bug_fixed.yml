@@ -3,7 +3,7 @@ experiment_name: five_stage_training
 template:
   sub_exp_name: pretrain_regressor_good_VIS_only_stage
   compound_model:
-    generator: generator_3_2
+    generator: generator_3_3
     discriminator: discriminator_2_1
     regressor: regressor_1_3
   data:
