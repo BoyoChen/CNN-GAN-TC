@@ -62,10 +62,12 @@ Once the experiemnt get interrupted, we probably want to continue from the compl
 For example, when the *five_stage_training* experiment get interrupted when executing sub-exp #3 (*pretrain_regressor_all_data_stage*), we want to restart from the beginning of sub-exp #3 instead of sub-exp #1.
 
 We can do this to save times:
+
 1. Remove partially done experiment's log.
 ```
 rm -r logs/five_stage_training/pretrain_regressor_all_data_stage/ 
 ```
+
 2. Restart experiment with argument: *omit_completed_sub_exp*.
 ```
 pipenv run python train main.py experiments/GAN_experiments/five_stage_training.yml --omit_completed_sub_exp
@@ -103,7 +105,9 @@ Our model achieves the following performance on:
 ![performance_table](figs/performance_table.png)
 
 ### Continuous, stable, high frequency observations:
+
 With the proposed model, we can now:
+
 1. Stably obtain VIS images even at the midnight.
 2. Stably obtain PMW up to every 15 minutes.
 
@@ -116,10 +120,14 @@ The first image starts from 08/30 2019 0000 UTC.
 The last image ends at 09/02 2019 0800 UTC.
 
 #### VIS
+
 ![hourly_vis](figs/hourly_vis.png)
+
 The figure shows the ability of proposed model to generate decent simulated VIS observation even at the midnight.
 
 ### PMW:
+
 ![hourly_pmw](figs/hourly_pmw.png)
+
 Notice that PMW obervations can only be obtained once per 3 hours before.
-With our proposed method, simulated PMW observations can be obtained with a much better frequency.
+With our proposed method, simulated PMW observations can be obtained with in much better frequency.
